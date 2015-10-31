@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+"""
+    Generate the /etc/systemd/system/dnscrypt.service entry for a specified 
+resolver.
+
+Usage: generate-dnscrypt-cmdline [<name>]
+
+Without the name, the names of all available resolvers are listed along with
+their location. If you give a resolver name, the command will generate the
+resolver specific command line. This command line is generally provided as the
+ExecStart entry for systemd the dnscrypt.service file
+(/etc/systemd/system/dnscrypt.service).
+"""
+
+from __future__ import print_function
+import requests
+import docopt
+import csv
+import sys
+
+cmdline = docopt.docopt(__doc__)
+name = cmdline['<name>']
+template = ' '.join([
+    '/usr/local/sbin/dnscrypt-proxy',
+    '--provider-key={Provider public key}',
+    '--provider-name={Provider name}',
+    '--resolver-address={Resolver address}',
+    '--local-address=127.0.0.1:2053',
+    '--pidfile=/tmp/dnscrypt.pid',
+    '--daemonize',
+])
+
+url = 'https://raw.githubusercontent.com/jedisct1/dnscrypt-proxy/master/dnscrypt-resolvers.csv'
+
+try:
+    response = requests.get(url)
+except requests.RequestException as err:
+    sys.exit(str(err))
+resolvers = response.content.decode('utf8').splitlines()
+
+reader = csv.DictReader(resolvers)
+if name:
+    for row in reader:
+        if row['Name'] == name:
+            print(template.format(**row))
+            sys.exit()
+    sys.exit('%s not found.' % name)
+else:
+    for row in reader:
+        print('%s: %s - %s: no-logs=%s' % (
+            row['Name'],
+            row['Full name'],
+            row['Location'],
+            row['No logs'],
+        ))
