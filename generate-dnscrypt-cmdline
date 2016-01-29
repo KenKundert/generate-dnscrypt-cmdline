@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
     Generate the /etc/systemd/system/dnscrypt.service entry for a specified 
 resolver.
@@ -12,7 +12,6 @@ ExecStart entry for systemd the dnscrypt.service file
 (/etc/systemd/system/dnscrypt.service).
 """
 
-from __future__ import print_function
 import requests
 import docopt
 import csv
