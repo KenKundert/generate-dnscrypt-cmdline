@@ -11,10 +11,12 @@ import socket
 import os
 import sys
 
+MAINTAINER = 'root@localhost'
+
 try:
     dig = Popen(
-	['dig', 'google.com', '@localhost', '-p', '2053'],
-	stdout=PIPE
+        ['dig', 'google.com', '@localhost', '-p', '2053'],
+        stdout=PIPE
     )
     status = dig.wait()
 except (IOError, OSError) as error:
@@ -22,16 +24,15 @@ except (IOError, OSError) as error:
 
 if status:
     hostname = socket.gethostname().split('.')[0]
-    maintainer = 'admin@designers-guide.com'
     subject = 'dnscrypt on %s' % hostname
     message = 'dnscrypt fails to resolve google.com on %s' % hostname
     try:
-	process = Popen(['mail', '-s', subject, maintainer], stdin=PIPE)
+        process = Popen(['mail', '-s', subject, MAINTAINER], stdin=PIPE)
     except (IOError, OSError) as error:
-	sys.exit(str(error))
+        sys.exit(str(error))
     process.stdin.write(message)
     process.stdin.close()
     status = process.wait()
     if status != 0:
-	print('mail: unexpected exit status (%s)' % status)
+        print('mail: unexpected exit status (%s)' % status)
     sys.exit()

@@ -3,7 +3,7 @@
 # in /var/log/messages. These indicate that the resolver used by dnscrypt has
 # gone stale.  The date on these messages are checked (after reconstructing the
 # year) and if they are newer than the modification date on the
-# dnscrypt.service file a warning is mailed to the maintainer (Ken).
+# dnscrypt.service file a warning is mailed to the maintainer.
 
 from __future__ import print_function
 from subprocess import Popen, PIPE
@@ -11,6 +11,8 @@ from datetime import datetime
 import socket
 import os
 import sys
+
+MAINTAINER = 'root@localhost'
 
 config_time = datetime.fromtimestamp(os.path.getmtime('/etc/systemd/system/dnscrypt.service'))
 
@@ -30,11 +32,10 @@ with open('/var/log/messages', 'rU') as f:
                 new_msg_time = new_msg_time.replace(year=msg_year)
             if msg_time > config_time:
                 hostname = socket.gethostname().split('.')[0]
-                maintainer = 'admin@designers-guide.com'
                 subject = 'dnscrypt failing on %s' % hostname
                 message = line.strip()
                 try:
-                    process = Popen(['mail', '-s', subject, maintainer], stdin=PIPE)
+                    process = Popen(['mail', '-s', subject, MAINTAINER], stdin=PIPE)
                 except (IOError, OSError) as error:
                     sys.exit(str(error))
                 process.stdin.write(message)
