@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+"""
+    Update the dnsCrypt resolver and restart daemon.
+resolver.
+
+Usage: generate-dnscrypt-cmdline <name>
+
+The name should be chosen by running generate-dnscrypt-cmdline.
+"""
+
+import docopt
+import pathlib
+import sys
+from subprocess import check_output
+from textwrap import indent
+
+def run(cmd):
+    return check_output(cmd, universal_newlines=True)
+
+systemd_service_file = pathlib.Path('/etc/systemd/system/dnscrypt.service')
+cmdline = docopt.docopt(__doc__)
+name = cmdline['<name>']
+
+# generate dnscrypt command
+print('retreiving command for', name)
+cmd = run(['generate-dnscrypt-cmdline', name])
+
+# read /etc/systemd/system/dnscrypt.serice and split into lines.
+print('updating ', str(systemd_service_file))
+with systemd_service_file.open() as f:
+	orig = f.read().split('\n')
+
+# replace the existing command with the new one
+new = []
+for line in orig:
+    if line.startswith('ExecStart '):
+        line = 'ExecStart = %s' % cmd.strip()
+    new.append(line)
+contents = '\n'.join(new)
+print('contents:', indent(contents, prefix='    '), sep='\n')
+with systemd_service_file.open('w') as f:
+	f.write(contents)
+
+# restart the dnscrypt daemon
+print('updating ', str(systemd_service_file))
+stdout = run(['systemctl', '--system', 'daemon-reload'])
+if stdout:
+    print('daemon-reload:', indent(stdout, prefix='    '), sep='\n')
+stdout = run(['systemctl', 'restart', 'dnscrypt'])
+if stdout:
+    print('restart:', indent(stdout, prefix='    '), sep='\n')
+stdout = run(['systemctl', 'status', 'dnscrypt'])
+if stdout:
+    print('status:', indent(stdout, prefix='    '), sep='\n')
+
+# print reminder
+print('to test, run:')
+print('    dig google.com @localhost -p 2053')
