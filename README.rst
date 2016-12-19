@@ -6,11 +6,8 @@ work with dnscrypt.
 
 Before you can use it you must install the requests and docopt packages::
 
-   yum install python-requests python-docopt (or python3-requests python3-docopt)
+   pip install --user requests docopt
 
-or::
-
-   pip install requests docopt
 
 Finding a Suitable Resolver and Generating the Command
 ------------------------------------------------------

@@ -1,0 +1,1 @@
+/usr/local/sbin/dnscrypt-proxy --provider-key=3133:72AD:5956:32C2:416B:872F:098F:851B:DDB9:6528:4C6C:BE9A:4F19:0964:30DB:A95A --provider-name=2.dnscrypt-cert.cryptostorm.is --resolver-address=104.238.194.235 --local-address=127.0.0.1:2053 --pidfile=/tmp/dnscrypt.pid --daemonize

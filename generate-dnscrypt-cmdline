@@ -20,7 +20,8 @@ import sys
 cmdline = docopt.docopt(__doc__)
 name = cmdline['<name>']
 template = ' '.join([
-    '/usr/local/sbin/dnscrypt-proxy',
+    # '/usr/local/sbin/dnscrypt-proxy', # if you compile and install it yourself
+    '/usr/sbin/dnscrypt-proxy',         # if you install dnscrypt with yum
     '--provider-key={Provider public key}',
     '--provider-name={Provider name}',
     '--resolver-address={Resolver address}',
