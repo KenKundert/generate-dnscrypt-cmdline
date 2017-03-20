@@ -26,7 +26,7 @@ template = ' '.join([
     '--provider-name={Provider name}',
     '--resolver-address={Resolver address}',
     '--local-address=127.0.0.1:2053',
-    '--pidfile=/tmp/dnscrypt.pid',
+    '--pidfile=/var/tmp/dnscrypt.pid',
     '--daemonize',
 ])
 

@@ -2,7 +2,8 @@ GENERATE DNSCRYPT COMMAND LINE
 ==============================
 
 This script can be used to select and configure a public dnscrypt resolver to 
-work with dnscrypt.
+work with dnscrypt as described in 
+http://nurdletech.com/linux-notes/dns/dnscrypt.html.
 
 Before you can use it you must install the requests and docopt packages::
 

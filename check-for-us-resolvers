@@ -1,0 +1,3 @@
+#!/bin/csh -f
+
+./generate-dnscrypt-cmdline | grep 'US|United States'
