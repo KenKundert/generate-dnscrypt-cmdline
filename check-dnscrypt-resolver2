@@ -1,18 +1,29 @@
 #!/usr/bin/env python
-# Run:
-#    dig google.com @localhost -p 2053
-# to see if dnscrypt is able to resolve addresses. This should be run with the
-# base check-dnscrypt-resolver; it should find an error earlier than the
-# original script. May want combine these two scripts eventually.
+"""
+Check DNScrypt resolver
+
+The DNScrypt resolver is checked to determine whether it can resolve a common
+domain name (google.com).
+
+Usage:
+    check-dnscrypt-resolver [<email>]
+
+If an email address is given a message is sent if there is a failure indicating
+a problem. Otherwise, the results of the test are printed to stdout.
+"""
 
 from __future__ import print_function
 from subprocess import Popen, PIPE
+from docopt import docopt
 import socket
 import os
 import sys
 
-MAINTAINER = 'root@localhost'
+cmdline = docopt(__doc__)
+email = cmdline['<email>']
 
+
+# attempt to resolve google.com
 try:
     dig = Popen(
         'dig google.com @localhost -p 2053'.split(),
@@ -22,17 +33,23 @@ try:
 except (IOError, OSError) as error:
     sys.exit(str(error))
 
-if status:
-    hostname = socket.gethostname().split('.')[0]
-    subject = 'dnscrypt on %s' % hostname
-    message = 'dnscrypt fails to resolve google.com on %s' % hostname
-    try:
-        process = Popen(['mail', '-s', subject, MAINTAINER], stdin=PIPE)
-    except (IOError, OSError) as error:
-        sys.exit(str(error))
-    process.stdin.write(message)
-    process.stdin.close()
-    status = process.wait()
-    if status != 0:
-        print('mail: unexpected exit status (%s)' % status)
-    sys.exit()
+# notify the user
+if email:
+    if status:
+        hostname = socket.gethostname().split('.')[0]
+        subject = 'dnscrypt on %s' % hostname
+        message = 'dnscrypt fails to resolve google.com on %s' % hostname
+        try:
+            process = Popen(['mail', '-s', subject, email], stdin=PIPE)
+        except (IOError, OSError) as error:
+            sys.exit(str(error))
+        process.stdin.write(message)
+        process.stdin.close()
+        status = process.wait()
+        if status != 0:
+            print('mail: unexpected exit status (%s)' % status)
+else:
+    if status:
+        print('DNScrypt fails to resolve google.com.')
+    else:
+        print('DNScrypt successfully resolves google.com.')

@@ -32,11 +32,17 @@ template = ' '.join([
 
 url = 'https://raw.githubusercontent.com/jedisct1/dnscrypt-proxy/master/dnscrypt-resolvers.csv'
 
-try:
-    response = requests.get(url)
-except requests.RequestException as err:
-    sys.exit(str(err))
-resolvers = response.content.decode('utf8').splitlines()
+# The CSV file that contains the resolves seems no longer to be available 
+# online, but I found a copy of it in /usr/share. Hopefully it is kept up to 
+# date via yum.
+# try:
+#     response = requests.get(url)
+# except requests.RequestException as err:
+#     sys.exit(str(err))
+# resolvers = response.content.decode('utf8').splitlines()
+
+with open('/usr/share/dnscrypt-proxy/dnscrypt-resolvers.csv') as f:
+    resolvers = f.read().splitlines()
 
 reader = csv.DictReader(resolvers)
 if name:

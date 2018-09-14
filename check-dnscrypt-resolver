@@ -1,46 +1,78 @@
 #!/usr/bin/env python
-#   Nov  1 05:29:02 host dnscrypt-proxy[818]: No useable certificates found
-# in /var/log/messages. These indicate that the resolver used by dnscrypt has
-# gone stale.  The date on these messages are checked (after reconstructing the
-# year) and if they are newer than the modification date on the
-# dnscrypt.service file a warning is mailed to the maintainer.
+"""
+Check DNScrypt resolver
+
+The system log (/var/log/messages) is checked to determine whether dnscrypt is 
+currently working with a provider for which it has a valid up-to-date 
+certificate.
+
+Usage:
+    check-dnscrypt-resolver [<email>]
+
+If an email address is given a message is sent if there is a failure indicating 
+a problem. Otherwise, the results of the test are printed to stdout.
+"""
 
 from __future__ import print_function
 from subprocess import Popen, PIPE
 from datetime import datetime
+from docopt import docopt
 import socket
 import os
 import sys
 
-MAINTAINER = 'root@localhost'
-
 config_time = datetime.fromtimestamp(os.path.getmtime('/etc/systemd/system/dnscrypt.service'))
+cert_is_valid = True
+cert_valid_msg = 'This certificate is valid'
+cert_invalid_msg = 'No useable certificates found'
+cert_msgs = (cert_valid_msg, cert_invalid_msg)
 
 # In /var/log/messages look for messages of the form:
 #    Nov  1 05:29:02 host dnscrypt-proxy[818]: No useable certificates found
+# or
+#    Nov  1 05:29:02 host dnscrypt-proxy[818]: This certificate is valid
+
+cmdline = docopt(__doc__)
+email = cmdline['<email>']
+
+# check /var/log/messages (must be root to do so)
 with open('/var/log/messages', 'rU') as f:
     for line in f.readlines():
-        if 'dnscrypt-proxy' in line and 'No useable certificates found' in line:
-            current_time = datetime.now()
-            msg_time = datetime.strptime(' '.join(line.split()[:3]), '%b %d %H:%M:%S')
-            msg_year = 2015
-            msg_time = msg_time.replace(year=msg_year)
-            new_msg_time = msg_time
-            while new_msg_time < current_time:
-                msg_time = new_msg_time
-                msg_year += 1
-                new_msg_time = new_msg_time.replace(year=msg_year)
-            if msg_time > config_time:
-                hostname = socket.gethostname().split('.')[0]
-                subject = 'dnscrypt failing on %s' % hostname
-                message = line.strip()
-                try:
-                    process = Popen(['mail', '-s', subject, MAINTAINER], stdin=PIPE)
-                except (IOError, OSError) as error:
-                    sys.exit(str(error))
-                process.stdin.write(message)
-                process.stdin.close()
-                status = process.wait()
-                if status != 0:
-                    print('mail: unexpected exit status (%s)' % status)
-                sys.exit()
+        if 'dnscrypt-proxy' in line:
+            if cert_valid_msg in line or cert_invalid_msg in line:
+
+                # log entries do not have the year; fix that
+                current_time = datetime.now()
+                msg_time = datetime.strptime(' '.join(line.split()[:3]), '%b %d %H:%M:%S')
+                msg_year = 2018
+                msg_time = msg_time.replace(year=msg_year)
+                new_msg_time = msg_time
+                while new_msg_time < current_time:
+                    msg_time = new_msg_time
+                    msg_year += 1
+                    new_msg_time = new_msg_time.replace(year=msg_year)
+
+                # only consider messages that occurred after dnscrypt was configured
+                if msg_time > config_time:
+                    cert_is_valid = cert_valid_msg in line
+
+# notify user
+if email:
+    if not cert_is_valid:
+        hostname = socket.gethostname().split('.')[0]
+        subject = 'dnscrypt failing on %s' % hostname
+        message = line.strip()
+        try:
+            process = Popen(['mail', '-s', subject, email], stdin=PIPE)
+        except (IOError, OSError) as error:
+            sys.exit(str(error))
+        process.stdin.write(message)
+        process.stdin.close()
+        status = process.wait()
+        if status != 0:
+            print('mail: unexpected exit status (%s)' % status)
+else:
+    if cert_is_valid:
+        print('DNScrypt certificate is up-to-date.')
+    else:
+        print('DNScrypt certificate is stale.')
